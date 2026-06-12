@@ -154,6 +154,6 @@ git clone https://github.com/Slbjg/SMSTestSender-ML.git
 
 | Приложение | Ссылка |
 |------------|--------|
-| Детектор спама (основное) | [https://github.com/S1bjg/SMSShield-ML]() |
+| Детектор спама (основное) | [https://github.com/Slbjg/SMSShield-ML]() |
 
 ## 
