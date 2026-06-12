@@ -86,10 +86,10 @@ SMSTestSender-ML/
 
 ## Установка и запуск
 
-### 1. Клонируйте репозиторий
+### 1. Копируйте репозиторий
 
 ```bash
-git clone https://github.com/S1bjg/SMSTestSender-ML.git
+git clone https://github.com/Slbjg/SMSTestSender-ML.git
 ```
 
 ### 2. Откройте проект в Android Studio
