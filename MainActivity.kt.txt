@@ -1,0 +1,223 @@
+package com.example.smstestsendermllr4
+
+import android.Manifest
+import android.app.Activity
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.os.Build
+import android.os.Bundle
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import kotlin.random.Random
+
+private const val CHANNEL_ID = "sms_test_sender_channel"
+
+class MainActivity : Activity() {
+    private lateinit var info: TextView
+    private var counter = 1
+
+    private val normalMessages = listOf(
+        "Привет, я уже выехал. Буду через 15 минут.",
+        "Завтра встречаемся после пары, не забудь тетрадь.",
+        "Спасибо за помощь, всё получилось.",
+        "Можешь отправить файл вечером?",
+        "Я купил продукты, хлеб и молоко есть.",
+        "Пара перенесена на 12:00.",
+        "Лекция будет в 214 аудитории.",
+        "Практика начнется после обеда.",
+        "Зачет перенесли на пятницу.",
+        "Сегодня встречаемся в университете к 10:30.",
+        "Преподаватель попросил отправить отчет до вечера.",
+        "Позвони, когда освободишься.",
+        "Документы лежат на столе.",
+        "Сегодня без изменений, всё по плану.",
+        "Я на месте, жду у входа."
+    )
+
+    private val bankMessages = listOf(
+        "СберБанк: код подтверждения 4812. Никому не сообщайте код.",
+        "ВТБ: операция на сумму 1250 руб. Код подтверждения 9031.",
+        "Тинькофф: для входа используйте код 774920.",
+        "Альфа-Банк: подтверждение платежа 320 руб. Код 1155.",
+        "Банк: ваш одноразовый пароль 846201 действует 5 минут.",
+        "Карта *1234: списание 560 руб. Если это не вы, обратитесь в банк.",
+        "Код подтверждения оплаты: 6713. Не передавайте его другим людям.",
+        "Операция по карте ожидает подтверждения. SMS-код 2904.",
+        "Ваш баланс пополнен на 1000 руб.",
+        "Банковское уведомление: перевод выполнен успешно."
+    )
+
+    private val spamMessages = listOf(
+        "Поздравляем! Вы выиграли приз. Заберите подарок по ссылке http://bonus-win.ru",
+        "Скидка 90% только сегодня! Перейдите на www.sale-priz.com",
+        "Получите кредит без отказа за 5 минут. Заявка по ссылке.",
+        "Вы стали победителем акции. Срочно заберите бонус.",
+        "Заработок от 10000 рублей в день без опыта, пишите сейчас.",
+        "Уникальное предложение! Осталось 3 места, переходите по ссылке.",
+        "Ваш номер выбран для подарка. Получите деньги прямо сейчас.",
+        "Мега-распродажа! Нажмите на ссылку и активируйте купон.",
+        "Бесплатный розыгрыш смартфона, регистрация по ссылке.",
+        "Получите займ без проверки и справок, решение за минуту."
+    )
+
+    private val phishingMessages = listOf(
+        "Ваша карта заблокирована. Срочно подтвердите данные: http://bank-check.ru",
+        "Служба безопасности: обнаружен вход. Введите пароль по ссылке.",
+        "Аккаунт будет удален. Подтвердите личность немедленно.",
+        "Подозрительная операция. Перейдите по ссылке для отмены платежа.",
+        "Ваш банковский кабинет заблокирован. Пройдите верификацию.",
+        "Для восстановления доступа введите код и пароль на сайте.",
+        "Оплата приостановлена. Обновите данные карты по ссылке.",
+        "Срочно подтвердите номер телефона, иначе доступ будет закрыт.",
+        "Ваш профиль взломан. Перейдите по ссылке для защиты.",
+        "Проверка безопасности: укажите SMS-код на странице банка."
+    )
+
+    private val dangerMessages = listOf(
+        "Я тебя найду и разберусь, если не ответишь.",
+        "Ты пожалеешь, если не сделаешь как сказано.",
+        "Мы знаем твой адрес, срочно переведи деньги.",
+        "Если не заплатишь, пострадаешь.",
+        "Тебя ждут проблемы. Не игнорируй сообщение.",
+        "Это шантаж: отправь деньги или данные уйдут всем.",
+        "Я сломаю тебе всё, если не выйдешь на связь.",
+        "Последнее предупреждение, дальше будет хуже.",
+        "Передай код, иначе будут последствия.",
+        "Угроза безопасности: выполняй требования немедленно."
+    )
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        window.statusBarColor = Color.rgb(6, 42, 54)
+        window.navigationBarColor = Color.rgb(6, 42, 54)
+        createChannel()
+        requestNotificationPermission()
+        buildUi()
+    }
+
+    private fun buildUi() {
+        val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(241, 247, 248)) }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(22), dp(18), dp(28))
+        }
+        scroll.addView(root)
+
+        info = text("Готово к отправке тестовых уведомлений", 16, true, Color.rgb(10, 120, 86))
+        root.addView(info, fullWidth().bottom(12))
+
+        root.addView(button("Обычное сообщение") { sendRandom("Обычное", normalMessages) }, fullWidth().bottom(10))
+        root.addView(button("Код банка") { sendRandom("Банк", bankMessages) }, fullWidth().bottom(10))
+        root.addView(button("Спам") { sendRandom("Спам", spamMessages) }, fullWidth().bottom(10))
+        root.addView(button("Фишинг") { sendRandom("Фишинг", phishingMessages) }, fullWidth().bottom(10))
+        root.addView(button("Опасное сообщение") { sendRandom("Опасное", dangerMessages) }, fullWidth().bottom(10))
+        root.addView(button("Случайное уведомление") { sendAny() }, fullWidth().bottom(10))
+        root.addView(button("Пачка 15 уведомлений") { sendPack() }, fullWidth().bottom(10))
+
+        setContentView(scroll)
+    }
+
+    private fun sendAny() {
+        val all = listOf(
+            "Обычное" to normalMessages,
+            "Банк" to bankMessages,
+            "Спам" to spamMessages,
+            "Фишинг" to phishingMessages,
+            "Опасное" to dangerMessages
+        )
+        val pair = all.random()
+        sendRandom(pair.first, pair.second)
+    }
+
+    private fun sendPack() {
+        repeat(15) { index ->
+            val all = listOf(normalMessages, bankMessages, spamMessages, phishingMessages, dangerMessages)
+            val title = listOf("Обычное", "Банк", "Спам", "Фишинг", "Опасное").random()
+            val text = all.random().random()
+            sendNotification("$title #${index + 1}", text)
+        }
+        info.text = "Отправлена пачка из 15 уведомлений"
+    }
+
+    private fun sendRandom(title: String, variants: List<String>) {
+        val message = variants.random()
+        sendNotification(title, message)
+        info.text = "Отправлено: $title"
+    }
+
+    private fun sendNotification(title: String, message: String) {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, CHANNEL_ID)
+        } else {
+            Notification.Builder(this)
+        }
+        val notification = builder
+            .setSmallIcon(com.example.smstestsendermllr4.R.drawable.ic_stat_sms)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(Notification.BigTextStyle().bigText(message))
+            .setAutoCancel(true)
+            .build()
+        manager.notify(counter++, notification)
+    }
+
+    private fun createChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(CHANNEL_ID, "SMS Test Sender", NotificationManager.IMPORTANCE_HIGH)
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 10)
+        }
+    }
+
+    private fun text(value: String, sp: Int, bold: Boolean, color: Int): TextView = TextView(this).apply {
+        text = value
+        textSize = sp.toFloat()
+        setTextColor(color)
+        typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+        includeFontPadding = true
+    }
+
+    private fun button(label: String, action: () -> Unit): Button = Button(this).apply {
+        text = label
+        textSize = 17f
+        isAllCaps = false
+        typeface = Typeface.DEFAULT_BOLD
+        setTextColor(Color.WHITE)
+        background = GradientDrawable().apply {
+            setColor(Color.rgb(6, 42, 54))
+            cornerRadius = dp(18).toFloat()
+        }
+        setOnClickListener { action() }
+    }
+
+    private fun card(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(22), dp(20), dp(22), dp(20))
+        background = GradientDrawable().apply {
+            setColor(Color.WHITE)
+            cornerRadius = dp(28).toFloat()
+            setStroke(dp(1), Color.rgb(220, 232, 237))
+        }
+        elevation = dp(2).toFloat()
+    }
+
+    private fun fullWidth(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+    private fun LinearLayout.LayoutParams.top(v: Int) = apply { topMargin = dp(v) }
+    private fun LinearLayout.LayoutParams.bottom(v: Int) = apply { bottomMargin = dp(v) }
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+}

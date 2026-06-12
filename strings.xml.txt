@@ -1,0 +1,3 @@
+<resources>
+    <string name="app_name">SMSTestSender ML</string>
+</resources>
